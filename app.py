@@ -1,16 +1,14 @@
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import streamlit as st
 from PIL import Image
 from tensorflow import keras
 
 MODEL_PATH = Path(__file__).parent / "models" / "wildfire_model.keras"
 IMG_SIZE = (224, 224)
-
-# TODO: replace with the real class names in the order the model was trained on.
-CLASS_NAMES = ["class_0", "class_1", "class_2"]
+SMOKE_INDEX = 2
+SMOKE_THRESHOLD = 0.5
 
 
 @st.cache_resource
@@ -25,9 +23,9 @@ def preprocess(image: Image.Image) -> np.ndarray:
 
 
 def main():
-    st.set_page_config(page_title="Wildfire Classifier", layout="centered")
-    st.title("Wildfire Image Classifier")
-    st.write("Upload an image and the model will predict the class.")
+    st.set_page_config(page_title="Smoke Detector", layout="centered")
+    st.title("Smoke Detector")
+    st.write("Upload an image and the model will tell you if it contains smoke.")
 
     uploaded = st.file_uploader(
         "Drop an image here, or click to browse",
@@ -45,15 +43,15 @@ def main():
         x = preprocess(image)
         probs = model.predict(x, verbose=0)[0]
 
-    top_idx = int(np.argmax(probs))
-    st.success(
-        f"Prediction: **{CLASS_NAMES[top_idx]}**  "
-        f"(confidence {probs[top_idx]:.1%})"
-    )
+    smoke_prob = float(probs[SMOKE_INDEX])
 
-    st.subheader("All class probabilities")
-    chart_df = pd.DataFrame({"probability": probs}, index=CLASS_NAMES)
-    st.bar_chart(chart_df)
+    st.metric(label="Smoke probability", value=f"{smoke_prob:.1%}")
+    st.progress(min(max(smoke_prob, 0.0), 1.0))
+
+    if smoke_prob >= SMOKE_THRESHOLD:
+        st.error("Smoke detected")
+    else:
+        st.success("No smoke")
 
 
 if __name__ == "__main__":
