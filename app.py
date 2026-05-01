@@ -13,7 +13,6 @@ IMG_SIZE = (224, 224)
 SMOKE_INDEX = 2
 SMOKE_THRESHOLD = 0.5
 
-preprocess.preprocess_image(MODEL_PATH, IMG_SIZE)
 @st.cache_resource
 def load_model():
     return keras.models.load_model(MODEL_PATH)
@@ -22,6 +21,7 @@ def load_model():
 def preprocess(image: Image.Image) -> np.ndarray:
     image = image.convert("RGB").resize(IMG_SIZE)
     arr = np.asarray(image, dtype=np.float32)
+    preprocess.preprocess_image(image)
     return np.expand_dims(arr, axis=0)
 
 
