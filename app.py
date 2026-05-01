@@ -4,13 +4,16 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 from tensorflow import keras
+import preprocess
+
+
 
 MODEL_PATH = Path(__file__).parent / "models" / "wildfire_model.keras"
 IMG_SIZE = (224, 224)
 SMOKE_INDEX = 2
 SMOKE_THRESHOLD = 0.5
 
-
+preprocess.preprocess_image(MODEL_PATH, IMG_SIZE)
 @st.cache_resource
 def load_model():
     return keras.models.load_model(MODEL_PATH)
