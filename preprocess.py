@@ -3,7 +3,7 @@ import os
 import numpy as np
 import random
 
-IMG_SIZE = 320
+IMG_SIZE = 224
 
 SPLIT = {
     "train": 0.7,

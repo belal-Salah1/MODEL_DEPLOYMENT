@@ -1,15 +1,15 @@
+import os
+import tempfile
 from pathlib import Path
 
 import numpy as np
 import streamlit as st
 from PIL import Image
 from tensorflow import keras
-import preprocess
-
+import preprocess as pp
 
 
 MODEL_PATH = Path(__file__).parent / "models" / "wildfire_model.keras"
-IMG_SIZE = (224, 224)
 SMOKE_INDEX = 2
 SMOKE_THRESHOLD = 0.5
 
@@ -18,10 +18,16 @@ def load_model():
     return keras.models.load_model(MODEL_PATH)
 
 
-def preprocess(image: Image.Image) -> np.ndarray:
-    image = image.convert("RGB").resize(IMG_SIZE)
-    arr = np.asarray(image, dtype=np.float32)
-    preprocess.preprocess_image(image)
+def prepare_input(image: Image.Image) -> np.ndarray:
+    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+        image.convert("RGB").save(tmp.name)
+        tmp_path = tmp.name
+    try:
+        arr = pp.preprocess_image(tmp_path)
+    finally:
+        os.unlink(tmp_path)
+    if arr is None:
+        raise ValueError("preprocess_image returned None")
     return np.expand_dims(arr, axis=0)
 
 
@@ -43,7 +49,7 @@ def main():
 
     with st.spinner("Running model..."):
         model = load_model()
-        x = preprocess(image)
+        x = prepare_input(image)
         probs = model.predict(x, verbose=0)[0]
 
     smoke_prob = float(probs[SMOKE_INDEX])
